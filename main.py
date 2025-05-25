@@ -56,45 +56,83 @@ import json
 #         print(response.status_code)
 #         print()
 
-url = "https://playground.learnqa.ru/ajax/api/longtime_job"
+# url = "https://playground.learnqa.ru/ajax/api/longtime_job"
+#
+# # Отправляем запрос без параметра token
+# response_create_task = requests.get(url)
+# print(response_create_task.text)
+#
+# # Извлекаем данные из ответа
+# task_data = response_create_task.json()
+# token = task_data["token"]
+# seconds_to_wait = task_data["seconds"]
+# print(f"Token: {token}, Время выполнения: {seconds_to_wait} секунд")
+# print()
+#
+# # Отправляем запрос с token
+# response_check_before = requests.get(url, params={"token": token})
+# print(response_check_before.json())
+# print()
+#
+# # Проверяем поле status
+# status_before = response_check_before.json().get("status")
+# assert status_before == "Job is NOT ready", f"Неверный статус: {status_before}"
+# print("Статус корректен: Job is NOT ready")
+# print()
+#
+# # Ожидаем завершения задачи
+# print(f"Ожидание {seconds_to_wait} секунд...")
+# time.sleep(seconds_to_wait)
+# print("Ожидание завершено")
+# print()
+#
+# # Проверка статуса задачи после завершения
+# # Отправляем запрос с token
+# response_check_after = requests.get(url, params={"token": token})
+# print(response_check_after.json())
+# print()
+#
+# # Проверяем поле status и result
+# status_after = response_check_after.json().get("status")
+# result_after = response_check_after.json().get("result")
+# assert status_after == "Job is ready", f"Неверный статус: {status_after}"
+# assert result_after is not None, "Поле result отсутствует"
+# print(f"Статус корректен: Job is ready, Результат: {result_after}")
 
-# Отправляем запрос без параметра token
-response_create_task = requests.get(url)
-print(response_create_task.text)
+# Логин
+login = "super_admin"
 
-# Извлекаем данные из ответа
-task_data = response_create_task.json()
-token = task_data["token"]
-seconds_to_wait = task_data["seconds"]
-print(f"Token: {token}, Время выполнения: {seconds_to_wait} секунд")
-print()
+# Список паролей
+passwords = [
+    "password", "123456", "123456789", "12345678", "12345", "1234567", "1234567890",
+    "qwerty", "abc123", "111111", "123123", "admin", "1234", "letmein", "welcome",
+    "monkey", "password1", "sunshine", "master", "hello", "freedom", "whatever",
+    "qazwsx", "trustno1", "dragon"
+]
 
-# Отправляем запрос с token
-response_check_before = requests.get(url, params={"token": token})
-print(response_check_before.json())
-print()
+# Перебор паролей
+for password in passwords:
+    # Получаем авторизационную cookie
+    response_password = requests.post(
+        "https://playground.learnqa.ru/ajax/api/get_secret_password_homework",
+        data={"login": login, "password": password}
+    )
 
-# Проверяем поле status
-status_before = response_check_before.json().get("status")
-assert status_before == "Job is NOT ready", f"Неверный статус: {status_before}"
-print("Статус корректен: Job is NOT ready")
-print()
+    # Извлекаем cookie
+    cookie = response_password.cookies.get("auth_cookie")
 
-# Ожидаем завершения задачи
-print(f"Ожидание {seconds_to_wait} секунд...")
-time.sleep(seconds_to_wait)
-print("Ожидание завершено")
-print()
+    # Проверяем авторизацию с этой cookie
+    if cookie:
+        response_auth = requests.get(
+            "https://playground.learnqa.ru/ajax/api/check_auth_cookie",
+            cookies={"auth_cookie": cookie}
+        )
+        auth_message = response_auth.text
 
-# Проверка статуса задачи после завершения
-# Отправляем запрос с token
-response_check_after = requests.get(url, params={"token": token})
-print(response_check_after.json())
-print()
-
-# Проверяем поле status и result
-status_after = response_check_after.json().get("status")
-result_after = response_check_after.json().get("result")
-assert status_after == "Job is ready", f"Неверный статус: {status_after}"
-assert result_after is not None, "Поле result отсутствует"
-print(f"Статус корректен: Job is ready, Результат: {result_after}")
+        # Если авторизация успешна, выводим результат
+        if auth_message == "You are authorized":
+            print(f"Найден правильный пароль: {password}")
+            print(f"Сообщение: {auth_message}")
+            break
+    else:
+        print(f"Cookie не получена для пароля: {password}")
